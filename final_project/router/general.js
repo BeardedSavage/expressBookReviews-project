@@ -4,7 +4,7 @@ const { authenticated } = require('./auth_users.js');
 let isValid = require("./auth_users.js").isValid;
 let users = require("./auth_users.js").users;
 const public_users = express.Router();
-
+const axios = require('axios');
 
 public_users.post("/register", (req,res) => {
   //Write your code here
@@ -25,18 +25,42 @@ public_users.post("/register", (req,res) => {
 });
 
 // Get the book list available in the shop
-public_users.get('/',function (req, res) {
-  res.send(JSON.stringify({books}, null, 4));
+public_users.get('/', function (req, res) {
+  const promise = new Promise((resolve, reject) => {
+    try{
+      setTimeout (() => resolve(books), 600);
+    }
+    catch {
+      setTimeout (() => reject(404 + "There was an error fetching the books"));
+    }
+  });
+
+  console.log("Promise complete");
+
+  promise.then((result) => {
+    return res.status(200).json({books: result});
+  })
 });
 
 // Get book details based on ISBN
 public_users.get('/isbn/:isbn',function (req, res) {
-  const isbn = req.params.isbn;
-  res.send(books[isbn]);
+  const isbn = new Promise((resolve, reject) => {
+    try {
+      setTimeout(() => resolve(books[req.params.isbn]), 600);
+    }
+    catch {
+      reject(404 + "That ISBN does not exist")
+    }
+  });
+  console.log("Promise complete");
+  
+  isbn.then((result) => {
+    return res.status(200).json({books: result})
+  })
  });
   
 // Get book details based on author
-public_users.get('/author/:author',function (req, res) {
+public_users.get('/author/:author', async function (req, res) {
   //Write your code here
   let booksbyauthor = [];
   let isbns = Object.keys(books);
@@ -48,7 +72,6 @@ public_users.get('/author/:author',function (req, res) {
     }
   });
   res.send(JSON.stringify({booksbyauthor}, null, 4));
-  // return res.status(300).json({message: "Yet to be implemented"});
 });
 
 // Get all books based on title
